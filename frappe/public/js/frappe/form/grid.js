@@ -263,7 +263,7 @@ export default class Grid {
 				this.perm);
 		} else {
 			// not in form
-			this.display_status = 'Write';
+			this.display_status = this.df.read_only ? 'Read':'Write';
 		}
 
 		if(this.display_status === "None") return;
