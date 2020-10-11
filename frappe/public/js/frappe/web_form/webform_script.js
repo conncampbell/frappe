@@ -99,6 +99,8 @@ frappe.ready(function() {
 						if (field.fieldtype === "Link") {
 							field.only_select = true;
 						}
+						// ensure table fields are marked as web form based.
+						field.is_web_form = true;
 					});
 
 					if (df.fieldtype === "Attach") {
