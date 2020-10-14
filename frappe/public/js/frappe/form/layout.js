@@ -492,13 +492,6 @@ frappe.ui.form.Layout = Class.extend({
 			if (f.df.read_only_depends_on) {
 				this.set_dependant_property(f.df.read_only_depends_on, f.df.fieldname, 'read_only');
 			}
-
-			// set all containing table fields to read-only when the table is read-only.
-			if (f.df.fieldtype == 'Table' && f.df.read_only) {
-					$.each(f.df.fields, (i, df) => {
-						df.read_only = 1;
-					});
-				}
 		}
 
 		this.refresh_section_count();
