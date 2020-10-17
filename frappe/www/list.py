@@ -183,7 +183,7 @@ def get_list(doctype, txt, filters, limit_start, limit_page_length=20, ignore_pe
 		filters = []
 
 	if not fields:
-		fields = "distinct *"
+		fields = "*"
 
 	or_filters = []
 

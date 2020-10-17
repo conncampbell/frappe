@@ -173,6 +173,9 @@ def get_role_permissions(doctype_meta, user=None):
 
 		roles = frappe.get_roles(user)
 
+		if not roles:
+			return perms
+
 		def is_perm_applicable(perm):
 			return perm.role in roles and cint(perm.permlevel)==0
 
@@ -194,7 +197,7 @@ def get_role_permissions(doctype_meta, user=None):
 				# has no access if not owner
 				# only provide read access so that user is able to at-least access list
 				# (and the documents will be filtered based on owner sin further checks)
-				perms[ptype] = 1 if ptype == 'read' else 0
+				perms[ptype] = 0
 
 		frappe.local.role_permissions[cache_key] = perms
 
