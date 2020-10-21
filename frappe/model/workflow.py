@@ -58,7 +58,11 @@ def get_workflow_safe_globals():
 				get_value=frappe.db.get_value,
 				get_list=frappe.db.get_list
 			),
-			session=frappe.session
+			session=frappe.session,
+			utils=frappe._dict(
+				now_datetime=frappe.utils.now_datetime,
+				add_to_date=frappe.utils.add_to_date
+				)
 		)
 	)
 
