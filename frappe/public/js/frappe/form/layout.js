@@ -164,7 +164,7 @@ frappe.ui.form.Layout = Class.extend({
 		return fieldobj;
 	},
 
-	make_page: function (df) {
+	make_page: function (df) { // eslint-disable-line no-unused-vars
 		var me = this,
 			head = $('<div class="form-clickable-section text-center">\
 				<a class="btn-fold h6 text-muted">' + __("Show more details") + '</a>\
