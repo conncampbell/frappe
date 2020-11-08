@@ -57,6 +57,14 @@ frappe.ui.form.Control = Class.extend({
 				if(explain) console.log("By Read Only: Read");
 				return "Read";
 
+			} else if ((this.grid &&
+						this.grid.display_status == 'Read') ||
+						(this.layout &&
+						this.layout.grid &&
+						this.layout.grid.display_status == 'Read')) {
+				// parent grid is read
+				if(explain) console.log("By Parent Grid Read-only: Read");
+				return "Read";
 			}
 
 			return "Write";
@@ -64,6 +72,15 @@ frappe.ui.form.Control = Class.extend({
 
 		var status = frappe.perm.get_field_display_status(this.df,
 			frappe.model.get_doc(this.doctype, this.docname), this.perm || (this.frm && this.frm.perm), explain);
+
+		// Match parent grid controls read only status
+		if (status === 'Write' && (this.grid || (this.layout && this.layout.grid))) {
+			var grid = this.grid || this.layout.grid;
+			if (grid.display_status == 'Read') {
+				status = 'Read';
+				if (explain) console.log("By Parent Grid Read-only: Read");
+			}
+		}
 
 		// hide if no value
 		if (this.doctype && status==="Read" && !this.only_input
