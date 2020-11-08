@@ -44,17 +44,17 @@ frappe.ui.form.Control = Class.extend({
 			// like in case of a dialog box
 			if (cint(this.df.hidden)) {
 				// eslint-disable-next-line
-				if(explain) console.log("By Hidden: None");
+				if(explain) console.log("By Hidden: None"); // eslint-ignore-line
 				return "None";
 
 			} else if (cint(this.df.hidden_due_to_dependency)) {
 				// eslint-disable-next-line
-				if(explain) console.log("By Hidden Dependency: None");
+				if(explain) console.log("By Hidden Dependency: None"); // eslint-ignore-line
 				return "None";
 
 			} else if (cint(this.df.read_only)) {
 				// eslint-disable-next-line
-				if(explain) console.log("By Read Only: Read");
+				if(explain) console.log("By Read Only: Read"); // eslint-ignore-line
 				return "Read";
 
 			} else if ((this.grid &&
@@ -63,7 +63,7 @@ frappe.ui.form.Control = Class.extend({
 						this.layout.grid &&
 						this.layout.grid.display_status == 'Read')) {
 				// parent grid is read
-				if(explain) console.log("By Parent Grid Read-only: Read");
+				if(explain) console.log("By Parent Grid Read-only: Read"); // eslint-ignore-line
 				return "Read";
 			}
 
@@ -78,7 +78,7 @@ frappe.ui.form.Control = Class.extend({
 			var grid = this.grid || this.layout.grid;
 			if (grid.display_status == 'Read') {
 				status = 'Read';
-				if (explain) console.log("By Parent Grid Read-only: Read");
+				if (explain) console.log("By Parent Grid Read-only: Read"); // eslint-ignore-line
 			}
 		}
 
@@ -88,7 +88,7 @@ frappe.ui.form.Control = Class.extend({
 			&& !in_list(["HTML", "Image", "Button"], this.df.fieldtype)) {
 
 			// eslint-disable-next-line
-			if(explain) console.log("By Hide Read-only, null fields: None");
+			if(explain) console.log("By Hide Read-only, null fields: None"); // eslint-ignore-line
 			status = "None";
 		}
 
