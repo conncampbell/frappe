@@ -118,7 +118,7 @@ class Meta(Document):
 						# non standard list object, skip
 						continue
 
-				if (isinstance(value, (frappe.text_type, int, float, datetime, list, tuple))
+				if (isinstance(value, (str, int, float, datetime, list, tuple))
 					or (not no_nulls and value is None)):
 					out[key] = value
 
@@ -449,6 +449,25 @@ class Meta(Document):
 					self.high_permlevel_fields.append(df)
 
 		return self.high_permlevel_fields
+
+	def get_permlevel_access(self, permission_type='read', parenttype=None):
+		has_access_to = []
+		roles = frappe.get_roles()
+		for perm in self.get_permissions(parenttype):
+			if perm.role in roles and perm.get(permission_type):
+				if perm.permlevel not in has_access_to:
+					has_access_to.append(perm.permlevel)
+
+		return has_access_to
+
+	def get_permissions(self, parenttype=None):
+		if self.istable and parenttype:
+			# use parent permissions
+			permissions = frappe.get_meta(parenttype).permissions
+		else:
+			permissions = self.get('permissions', [])
+
+		return permissions
 
 	def get_dashboard_data(self):
 		'''Returns dashboard setup related to this doctype.

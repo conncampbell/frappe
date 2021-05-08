@@ -8,8 +8,8 @@ import frappe
 import json
 from email.utils import formataddr
 from frappe.core.utils import get_parent_doc
-from frappe.utils import (get_url, get_formatted_email, cint,
-  validate_email_address, split_emails, parse_addr, get_datetime)
+from frappe.utils import (get_url, get_formatted_email, cint, list_to_str,
+	validate_email_address, split_emails, parse_addr, get_datetime)
 from frappe.email.email_body import get_message_id
 import frappe.email.smtp
 import time
@@ -20,7 +20,8 @@ from frappe.utils.background_jobs import enqueue
 def make(doctype=None, name=None, content=None, subject=None, sent_or_received = "Sent",
 	sender=None, sender_full_name=None, recipients=None, communication_medium="Email", send_email=False,
 	print_html=None, print_format=None, attachments='[]', send_me_a_copy=False, cc=None, bcc=None,
-	flags=None, read_receipt=None, print_letterhead=True, email_template=None):
+	flags=None, read_receipt=None, print_letterhead=True, email_template=None, communication_type=None,
+	ignore_permissions=False):
 	"""Make a new communication.
 
 	:param doctype: Reference DocType.
@@ -42,15 +43,17 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 	is_error_report = (doctype=="User" and name==frappe.session.user and subject=="Error Report")
 	send_me_a_copy = cint(send_me_a_copy)
 
-	if doctype and name and not is_error_report and not frappe.has_permission(doctype, "email", name) and not (flags or {}).get('ignore_doctype_permissions'):
-		raise frappe.PermissionError("You are not allowed to send emails related to: {doctype} {name}".format(
-			doctype=doctype, name=name))
+	if not ignore_permissions:
+		if doctype and name and not is_error_report and not frappe.has_permission(doctype, "email", name) and not (flags or {}).get('ignore_doctype_permissions'):
+			raise frappe.PermissionError("You are not allowed to send emails related to: {doctype} {name}".format(
+				doctype=doctype, name=name))
 
 	if not sender:
 		sender = get_formatted_email(frappe.session.user)
 
-	if isinstance(recipients, list):
-		recipients = ', '.join(recipients)
+	recipients = list_to_str(recipients) if isinstance(recipients, list) else recipients
+	cc = list_to_str(cc) if isinstance(cc, list) else cc
+	bcc = list_to_str(bcc) if isinstance(bcc, list) else bcc
 
 	comm = frappe.get_doc({
 		"doctype":"Communication",
@@ -68,7 +71,8 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 		"email_template": email_template,
 		"message_id":get_message_id().strip(" <>"),
 		"read_receipt":read_receipt,
-		"has_attachment": 1 if attachments else 0
+		"has_attachment": 1 if attachments else 0,
+		"communication_type": communication_type
 	}).insert(ignore_permissions=True)
 
 	comm.save(ignore_permissions=True)
@@ -268,22 +272,13 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 				doc.attachments.append(a)
 
 def set_incoming_outgoing_accounts(doc):
-	doc.incoming_email_account = doc.outgoing_email_account = None
+	from frappe.email.doctype.email_account.email_account import EmailAccount
+	incoming_email_account = EmailAccount.find_incoming(
+		match_by_email=doc.sender, match_by_doctype=doc.reference_doctype)
+	doc.incoming_email_account = incoming_email_account.email_id if incoming_email_account else None
 
-	if not doc.incoming_email_account and doc.sender:
-		doc.incoming_email_account = frappe.db.get_value("Email Account",
-			{"email_id": doc.sender, "enable_incoming": 1}, "email_id")
-
-	if not doc.incoming_email_account and doc.reference_doctype:
-		doc.incoming_email_account = frappe.db.get_value("Email Account",
-			{"append_to": doc.reference_doctype, }, "email_id")
-
-	if not doc.incoming_email_account:
-		doc.incoming_email_account = frappe.db.get_value("Email Account",
-			{"default_incoming": 1, "enable_incoming": 1},  "email_id")
-
-	doc.outgoing_email_account = frappe.email.smtp.get_outgoing_email_account(raise_exception_not_set=False,
-		append_to=doc.doctype, sender=doc.sender)
+	doc.outgoing_email_account = EmailAccount.find_outgoing(
+		match_by_email=doc.sender, match_by_doctype=doc.reference_doctype)
 
 	if doc.sent_or_received == "Sent":
 		doc.db_set("email_account", doc.outgoing_email_account.name)

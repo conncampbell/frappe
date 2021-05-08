@@ -18,8 +18,8 @@ class TestDB(unittest.TestCase):
 	def test_get_value(self):
 		self.assertEqual(frappe.db.get_value("User", {"name": ["=", "Administrator"]}), "Administrator")
 		self.assertEqual(frappe.db.get_value("User", {"name": ["like", "Admin%"]}), "Administrator")
-		self.assertNotEquals(frappe.db.get_value("User", {"name": ["!=", "Guest"]}), "Guest")
-		self.assertEqual(frappe.db.get_value("User", {"name": ["<", "B"]}), "Administrator")
+		self.assertNotEqual(frappe.db.get_value("User", {"name": ["!=", "Guest"]}), "Guest")
+		self.assertEqual(frappe.db.get_value("User", {"name": ["<", "Adn"]}), "Administrator")
 		self.assertEqual(frappe.db.get_value("User", {"name": ["<=", "Administrator"]}), "Administrator")
 
 		self.assertEqual(frappe.db.sql("""SELECT name FROM `tabUser` WHERE name > 's' ORDER BY MODIFIED DESC""")[0][0],
