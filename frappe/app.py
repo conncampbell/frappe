@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
-from __future__ import unicode_literals
 
 import os
-from six import iteritems
 import logging
 
 from werkzeug.local import LocalManager
@@ -18,9 +16,9 @@ import frappe.handler
 import frappe.auth
 import frappe.api
 import frappe.utils.response
-import frappe.website.render
 from frappe.utils import get_site_name, sanitize_html
 from frappe.middlewares import StaticDataMiddleware
+from frappe.website.serve import get_response
 from frappe.utils.error import make_error_snapshot
 from frappe.core.doctype.comment.comment import update_comments_in_parent_after_request
 from frappe import _
@@ -74,7 +72,7 @@ def application(request):
 			response = frappe.utils.response.download_private_file(request.path)
 
 		elif request.method in ('GET', 'HEAD', 'POST'):
-			response = frappe.website.render.render()
+			response = get_response()
 
 		else:
 			raise NotFound
@@ -99,17 +97,7 @@ def application(request):
 		frappe.monitor.stop(response)
 		frappe.recorder.dump()
 
-		if hasattr(frappe.local, 'conf') and frappe.local.conf.enable_frappe_logger:
-			frappe.logger("frappe.web", allow_site=frappe.local.site).info({
-				"site": get_site_name(request.host),
-				"remote_addr": getattr(request, "remote_addr", "NOTFOUND"),
-				"base_url": getattr(request, "base_url", "NOTFOUND"),
-				"full_path": getattr(request, "full_path", "NOTFOUND"),
-				"method": getattr(request, "method", "NOTFOUND"),
-				"scheme": getattr(request, "scheme", "NOTFOUND"),
-				"http_status_code": getattr(response, "status_code", "NOTFOUND")
-			})
-
+		log_request(request, response)
 		process_response(response)
 		frappe.destroy()
 
@@ -136,6 +124,19 @@ def init_request(request):
 
 	if request.method != "OPTIONS":
 		frappe.local.http_request = frappe.auth.HTTPRequest()
+
+def log_request(request, response):
+	if hasattr(frappe.local, 'conf') and frappe.local.conf.enable_frappe_logger:
+		frappe.logger("frappe.web", allow_site=frappe.local.site).info({
+			"site": get_site_name(request.host),
+			"remote_addr": getattr(request, "remote_addr", "NOTFOUND"),
+			"base_url": getattr(request, "base_url", "NOTFOUND"),
+			"full_path": getattr(request, "full_path", "NOTFOUND"),
+			"method": getattr(request, "method", "NOTFOUND"),
+			"scheme": getattr(request, "scheme", "NOTFOUND"),
+			"http_status_code": getattr(response, "status_code", "NOTFOUND")
+		})
+
 
 def process_response(response):
 	if not response:
@@ -188,8 +189,9 @@ def make_form_dict(request):
 		frappe.throw(_("Invalid request arguments"))
 
 	try:
-		frappe.local.form_dict = frappe._dict({ k:v[0] if isinstance(v, (list, tuple)) else v \
-			for k, v in iteritems(args) })
+		frappe.local.form_dict = frappe._dict({
+			k: v[0] if isinstance(v, (list, tuple)) else v for k, v in args.items()
+		})
 	except IndexError:
 		frappe.local.form_dict = frappe._dict(args)
 
@@ -264,8 +266,7 @@ def handle_exception(e):
 		make_error_snapshot(e)
 
 	if return_as_message:
-		response = frappe.website.render.render("message",
-			http_status_code=http_status_code)
+		response = get_response("message", http_status_code=http_status_code)
 
 	return response
 
